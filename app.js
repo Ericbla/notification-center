@@ -9,8 +9,7 @@ var express = require('express'),
 
 
 var publisherClient = redis.createClient();
-var service = module.exports = express();
-var myPort = 8000;
+var service = express();
 
 // Configuration
 
@@ -86,10 +85,35 @@ service.post('/fire/:topic', function(req, res) {
     res.end();
 });
 
-// Create the HTTP server that will serve this service
-http_server = http.createServer(service);
+var start = module.exports.start = function(options, callback) {
+	// Create the HTTP server that will serve this service
+	http_server = http.createServer(service);
+	if (options && options.port) {
+		port = options.port;
+	} else {
+		port = 8000;
+	}
 
-http_server.listen(myPort, function() { 
-    console.log('HTTP server listening on port ' + myPort);
-});
+	http_server.listen(port, function() { 
+		console.log('HTTP server listening on port ' + port);
+		if (callback) {
+			callback();
+		}
+	});
+};
+
+var stop = module.exports.stop = function(callback) {
+	http_server.unref();
+	http_server.close(function() {
+		console.log('HTTP server closed');
+		if (callback) {
+			callback();
+		}
+	});
+};
+
+// Standalone invocation -> start the server
+if (require.main === module) {
+   start();
+}
 

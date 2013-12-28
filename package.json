@@ -1,0 +1,24 @@
+{
+  "name": "notification-center",
+  "version": "0.0.1",
+  "author": "Eric Blanchard <ericbla@gmail.com>",
+  "private": true,
+  "main": "./app.js",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ericbla/statsd-cache-backend.git"
+  },
+  "dependencies": {
+    "express": ">=3.4",
+    "redis": ">=0.10",
+    "util": ">=0.10"
+  },
+  "devDependencies": {
+    "vows": "~0.7.0",
+    "api-easy": "~0.3.x"
+  },
+  "scripts": {
+    "test": "vows --spec test/*"
+  }
+}

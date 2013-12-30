@@ -5,6 +5,10 @@ var app = require('../app.js');
 
 
 suite.use('localhost', 123456)
+.before('timeout', function(outgoing) {
+	outgoing['timeout'] = 3000; // 3s timeout
+	return outgoing;
+})
 .addBatch({
 	'Start the notification server': {
 		topic: function () {
@@ -18,17 +22,29 @@ suite.use('localhost', 123456)
 .setHeader('Accept', 'application/json, */*')
 .discuss('When fetching root url')
 .get('/')
-.expect(200, 'sould return some basic html', function (err, res, body) {
-		assert.match(body, /^<html>/);
-		
-	})
+.expect(200, 'should respond with text/html Content-Type', function (err, res, body) {
+        assert.equal(res.headers['content-type'], 'text/html');
+        assert.match(body, /^<html>/);
+    })
 .undiscuss()
 .discuss('When Publishing some message')
-.post('/fire/test')
-.expect(200, 'should return OK', function (err, res, body) {
-		assert.match(body, /^Fired/);
-	})
+.setHeader('Content-Type', 'application/json')
+.post('/publish/channel.item', { message: 'test'})
+.expect(200, 'should respond with text/html Content-Type', function (err, res, body) {
+        assert.equal(res.headers['content-type'], 'text/html');
+    })
+.expect('should have published topic in response', function (err, res, body) {
+		var re = new RegExp('channel\.item');
+        assert.match(body, re);
+    })
 .next()
+.undiscuss()
+//.discuss('When Subscribing some channel')
+//.get('/subscribe/channel.*')
+//.expect(200, 'should respond with text/event-stream Content-Type', function (err, res, body) {
+//        assert.equal(res.headers['content-type'], 'text/event-stream');
+//    })
+//.next()
 .addBatch({
 	'Shutdown the notification server': {
 		topic: function () {

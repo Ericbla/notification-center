@@ -21,6 +21,10 @@ service.configure(function() {
 });
 
 service.configure('development', function() {
+	service.use(function(req, res, next){
+		  util.log(req.method + ' ' + req.url);
+		  next();
+		});
     service.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
 });
 
@@ -28,22 +32,56 @@ service.configure('production', function() {
     service.use(express.errorHandler()); 
 });
 
-// Routes
 
-service.get('/', function(req, res){
-    res.send('<html><body>Welcome to Notification center</body></html>');
+// Index of the service (Web)
+service.get('/', function(req, res) {
+	res.writeHead(200, {
+	    'Content-Type': 'text/html'
+	  });
+    res.write('<html><body>Welcome to Notification center</body></html>');
     res.end();
 });
 
-service.get('/streams/:topic', function(req, res) {
+// Subscribe to a topic (SSE protocol)
+service.get('/subscribe/*', function(req, res) {
   // let request last as long as possible
   req.socket.setTimeout(Infinity);
 
   var messageCount = 0;
   var subscriber = redis.createClient();
-  var topic = req.params.topic;
+  var topic = req.params[0];
+  
+  util.log('subscribe to topic: ' + topic);
+  
+  // In case we encounter an error...print it out to the console
+  subscriber.on("error", function(err) {
+    console.log("Redis Error: " + err);
+  });
 
-  subscriber.subscribe(topic);
+  // When we receive a pmessage from the redis connection
+  subscriber.on("pmessage", function(pattern, channel, message) {
+    messageCount++; // Increment our message count
+    var event = null;
+    try {
+    	var obj = JSON.parse(message);
+    	event = obj.event;
+    	if (typeof event !== 'string') {
+    		event = null;
+    	} else {
+    		event = event.trim();
+    	}
+    } catch(err) {
+    	util.warn('Bad JSON message: ' + message);
+    }
+
+    res.write('id: ' + messageCount + '\n');
+    if (event && event != '' ) {
+    	res.write('event: ' + event + '\n');
+    }
+    res.write("data: " + message + '\n\n'); // Note the extra newline
+  });
+
+  subscriber.psubscribe(topic);
 
   // send headers for event-stream connection
   res.writeHead(200, {
@@ -53,35 +91,31 @@ service.get('/streams/:topic', function(req, res) {
   });
   res.write('\n');
   
-  // In case we encounter an error...print it out to the console
-  subscriber.on("error", function(err) {
-    console.log("Redis Error: " + err);
-  });
-
-  // When we receive a message from the redis connection
-  subscriber.on("message", function(channel, message) {
-    messageCount++; // Increment our message count
-
-    res.write('id: ' + messageCount + '\n');
-    res.write("data: " + message + '\n\n'); // Note the extra newline
-  });
+  // Emit a first fake event
+  res.write('id: 0\n');
+  res.write('event: fake\n');
+  res.write('data: Welcome new sbubscriber to topic: ' + topic + '\n\n'); // Note the extra newline');
+  
 
   // The 'close' event is fired when a user closes their browser window.
   // In that situation we want to make sure our redis channel subscription
   // is properly shut down to prevent memory leaks...and incorrect subscriber
   // counts to the channel.
   req.on("close", function() {
-    subscriber.unsubscribe();
+    subscriber.punsubscribe();
     subscriber.quit();
+    res.end();
   });
 });
 
-service.post('/fire/:topic', function(req, res) {
-	var topic = req.params.topic;
-	console.log('fire: ' + topic + ' body=' + util.inspect(req.body));
-	publisherClient.publish(topic, JSON.stringify(req.body));
+// Publish some event/message on a topic (Web)
+service.post('/publish/*', function(req, res) {
+	var topic = req.params[0];
+	var content = JSON.stringify(req.body);
+	util.log('publish: ' + topic + ' body=' + content);
+	publisherClient.publish(topic, content);
     res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write('Fired');
+    res.write('<html><body>Published on topic: ' + topic + '<br>' + content + '</body></html>');
     res.end();
 });
 
@@ -96,7 +130,7 @@ var start = module.exports.start = function(options, callback) {
 
 	http_server.listen(port, function() { 
 		console.log('HTTP server listening on port ' + port);
-		if (callback) {
+		if (callback && typeof callback === 'function') {
 			callback();
 		}
 	});
@@ -106,7 +140,7 @@ var stop = module.exports.stop = function(callback) {
 	http_server.unref();
 	http_server.close(function() {
 		console.log('HTTP server closed');
-		if (callback) {
+		if (callback && typeof callback === 'function') {
 			callback();
 		}
 	});

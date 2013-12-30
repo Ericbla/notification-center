@@ -19,15 +19,15 @@ Based on
 
 
 ## API ##
-  * GET /streams/{topic}
-    * Subscribe a topic channel
-  * POST /fire/{topic}
-    * Publish a message on a given topic. The message is encoded in the body
+  * GET /subscribe/{topic}
+    * Subscribe a topic channel (may include wildcard `*` )
+  * POST /publish/{topic}
+    * Publish a message on a given topic. The message is encoded in JSON in the body
   
 
 ## Dependencies ##
 - [express](http://expressjs.com/)
-- redis
+- [redis](https://github.com/mranney/node_redis)
 
 ## Development ##
 - [Bugs](https://github.com/Ericbla/notification-center/issues)

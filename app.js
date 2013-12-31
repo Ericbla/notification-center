@@ -13,9 +13,24 @@ var service = express();
 
 // Configuration
 
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+
+    // intercept OPTIONS method
+    if ('OPTIONS' == req.method) {
+    	util.log('OPTIONS ' + req.url + ' (Origin: ' + req.get('Origin') + ')');
+        res.send(200);
+    } else {
+        next();
+    }
+};
+
 service.configure(function() {
 	service.use(express.json());
 	service.use(express.urlencoded());
+	service.use(allowCrossDomain);
     service.use(express.methodOverride());
     service.use(express.static(__dirname + '/public'));
 });
@@ -42,6 +57,7 @@ service.get('/', function(req, res) {
     res.end();
 });
 
+
 // Subscribe to a topic (SSE protocol)
 service.get('/subscribe/*', function(req, res) {
   // let request last as long as possible
@@ -55,7 +71,7 @@ service.get('/subscribe/*', function(req, res) {
   
   // In case we encounter an error...print it out to the console
   subscriber.on("error", function(err) {
-    console.log("Redis Error: " + err);
+    util.error("Redis Error: " + err);
   });
 
   // When we receive a pmessage from the redis connection
@@ -71,7 +87,7 @@ service.get('/subscribe/*', function(req, res) {
     		event = event.trim();
     	}
     } catch(err) {
-    	util.warn('Bad JSON message: ' + message);
+    	util.error('Bad JSON message: ' + message);
     }
 
     res.write('id: ' + messageCount + '\n');

@@ -1,11 +1,15 @@
+#!/usr/bin/env node
+
 /**
  * Module dependencies.
  */
 
 var express = require('express'),
     http = require('http'),
-    redis   = require('redis'),
-    util = require("util");
+    redis = require('redis'),
+    util = require("util"),
+    fs = require('fs');
+
 
 
 var publisherClient = redis.createClient();
@@ -145,7 +149,7 @@ var start = module.exports.start = function(options, callback) {
 	}
 
 	http_server.listen(port, function() { 
-		console.log('HTTP server listening on port ' + port);
+		util.log('HTTP server listening on port ' + port);
 		if (callback && typeof callback === 'function') {
 			callback();
 		}
@@ -155,7 +159,7 @@ var start = module.exports.start = function(options, callback) {
 var stop = module.exports.stop = function(callback) {
 	http_server.unref();
 	http_server.close(function() {
-		console.log('HTTP server closed');
+		util.log('HTTP server closed');
 		if (callback && typeof callback === 'function') {
 			callback();
 		}
@@ -164,6 +168,33 @@ var stop = module.exports.stop = function(callback) {
 
 // Standalone invocation -> start the server
 if (require.main === module) {
-   start();
+	var program = require('commander'),
+	    appName = 'notification-center';
+	var defaultLogFile = '/var/log/' + appName + '.log',
+    	defaultPidFile = '/var/run/' + appName + '.pid';
+	program.version('1.1.0')
+	    .usage('[options] [port]\n\n    Launches a ' + appName + ' process listening at <port> (default: 8000)')
+    	.option('-d, --daemon', 'Turn the program into a daemon')
+    	.option('-l, --logfile [file]', '(only for daemon) Log to this file\n                      (default: ' + defaultLogFile + ')', defaultLogFile)
+    	.option('-p, --pidfile [file]', '(only for daemon) Write PID to this file\n                      (default: ' + defaultPidFile + ')', defaultPidFile)
+    	.parse(process.argv);
+	var port = 8000;
+	if (program.args.length >= 1) {
+		port = program.args[0];
+	}
+	if (program.daemon) {
+		var fd = fs.openSync(program.logfile, 'a');
+		require('daemon')({
+			stdout: fd,
+			stderr: fd
+		});
+		util.log('Running as a daemon (pid=' + process.pid + ')');
+		fs.writeFile(program.pidfile, process.pid, function(err) {
+			if (err) {
+				util.error("Can't write pid file");
+			}
+		});
+	}
+    start({'port': port});
 }
 

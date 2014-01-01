@@ -1,10 +1,13 @@
-# Simple Notification center
+# notification-center
+
+A Simple PUBLISH/SUBSCRIBE http front-end implementing the W3C Server Side Event protocol.
+
 [![Build Status](https://travis-ci.org/Ericbla/notification-center.png?branch=master)](https://travis-ci.org/Ericbla/notification-center)
 [![GitHub version](https://badge.fury.io/gh/Ericbla%2Fnotification-center.png)](http://badge.fury.io/gh/Ericbla%2Fnotification-center)
 
 ## Overview ##
 This a simple notification center (similar to pushd) providing a Server Side Events
-(SSE) implementation.
+(SSE) implementation on top of a **redis** messaging system.
 
 ## Description ##
 Based on

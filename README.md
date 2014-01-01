@@ -4,6 +4,7 @@ A Simple PUBLISH/SUBSCRIBE http front-end implementing the W3C Server Side Event
 
 [![Build Status](https://travis-ci.org/Ericbla/notification-center.png?branch=master)](https://travis-ci.org/Ericbla/notification-center)
 [![GitHub version](https://badge.fury.io/gh/Ericbla%2Fnotification-center.png)](http://badge.fury.io/gh/Ericbla%2Fnotification-center)
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/Ericbla/notification-center/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 [![NPM](https://nodei.co/npm/notification-center.png?downloads=true)](https://nodei.co/npm/notification-center/)
 

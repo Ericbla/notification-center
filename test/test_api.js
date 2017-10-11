@@ -4,7 +4,7 @@ var suite = apieasy.describe('Test API:');
 var app = require('../app.js');
 
 
-suite.use('localhost', 123456)
+suite.use('localhost', 12345)
 .before('timeout', function(outgoing) {
 	outgoing['timeout'] = 3000; // 3s timeout
 	return outgoing;
@@ -12,7 +12,7 @@ suite.use('localhost', 123456)
 .addBatch({
 	'Start the notification server': {
 		topic: function () {
-			app.start({'port':123456}, this.callback);
+			app.start({'port':12345}, this.callback);
 		},
 		'ok' : function () {
 		}
